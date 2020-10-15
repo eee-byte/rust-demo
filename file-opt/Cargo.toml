@@ -15,6 +15,7 @@ sha2 = "0.9.1"
 rand = "0.7.3"
 rand_xorshift = "0.2.0"
 criterion = "0.3"
+log = "0.4.7"
 
 [lib]
 bench = false
