@@ -62,13 +62,17 @@ fn random_read_file(str: &str) {
     for n in num {
         let now = Instant::now();
         println!("==============> read:{} before:{:?}", n, now);
-
+        i=0;
         while i < n {
-            let offset: u64 = rand::thread_rng().gen_range(1, 32 * 1024 * 1024 * 1024 - 32);
+            for x in 0..8 {
+            
+                let offset: u64 = rand::thread_rng().gen_range(1, 32 * 1024 * 1024 * 1024 - 32);
 
-            file.seek(std::io::SeekFrom::Start(i as u64)).unwrap();
-            file.read_exact(&mut res).unwrap();
+                file.seek(std::io::SeekFrom::Start(i as u64)).unwrap();
+                file.read_exact(&mut res).unwrap();
+            }
             i += 1;
+            //println!("i:{:?} offset:{:?} res:{:x?}", i, offset, res);
         }
         println!("Elapsed time: {:.2?}", now.elapsed());
     }
@@ -77,17 +81,20 @@ fn random_read_file(str: &str) {
 fn random_read_mmap(str: &str) {
     let mut file = File::open(str).unwrap();
     let mut mmap_data = unsafe { Mmap::map(&file).unwrap() };
-    let num = vec![1024, 10240, 1024 * 1024, 32 * 1024 * 1024, 64 * 1024 * 1024];
-    let mut res = vec![0u8; 32];
+    let num = vec![32*1024*1024, 32*1024*1024, 32*1024 * 1024, 32 * 1024 * 1024, 64 * 1024 * 1024];
+    let mut res = vec![0u8; 256];
     let mut i: usize = 0;
 
     for n in num {
         let now = Instant::now();
         println!("==============> read:{} before:{:?}", n, now);
-
+        i=0;
         while i < n {
-            let offset:usize = rand::thread_rng().gen_range(1, 32 * 1024 * 1024 * 1024 - 32);
-            res = mmap_data[offset..offset + 32].to_vec();
+            for x in 0..8 {
+                let offset:usize = rand::thread_rng().gen_range(1, 32 * 1024 * 1024 * 1024 - 32);
+                res = mmap_data[offset..offset + 32].to_vec();
+            }
+            //println!("i:{:?} res:{:x?}", i, res);
             i +=1;
         }
         println!("Elapsed time: {:.2?}", now.elapsed());
