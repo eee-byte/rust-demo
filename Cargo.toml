@@ -8,5 +8,10 @@ edition = "2018"
 name = "demo"
 path = "src/main.rs"
 
+[workspace]
+members = [
+    "file-opt"
+]
+
 [dependencies]
 

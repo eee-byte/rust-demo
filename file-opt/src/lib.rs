@@ -1,10 +1,10 @@
-use rand::{thread_rng, Rng};
-use rand::{RngCore, SeedableRng};
+use memmap::{Mmap, MmapMut, MmapOptions};
+use rand::{thread_rng, Rng, RngCore, SeedableRng};
 use rand_xorshift::XorShiftRng;
 use std::fs::File;
-use std::io::{Read, Seek, Write};
-use memmap::{Mmap, MmapMut, MmapOptions};
 use std::fs::OpenOptions;
+use std::io::{Read, Seek, Write};
+use std::time::{Duration, Instant};
 
 pub fn generate_file() {
     let mut rng = thread_rng();
@@ -19,7 +19,7 @@ pub fn generate_file() {
 
     let mut mmap = unsafe { MmapMut::map_mut(&file).unwrap() };
     let mut rng_input = vec![0u8; 8 * 32];
-    let mut data = vec![0u8; 2*1024*1024*1024];
+    let mut data = vec![0u8; 2 * 1024 * 1024 * 1024];
     let mut bytes_written = 0;
     while pos < 124 * 1024 * 1024 * 1024 {
         let secret_number = rand::thread_rng().gen_range(1, 255);
@@ -48,16 +48,64 @@ pub fn generate_file() {
         //if pos%(1024*1024*1024) == 0{
         // bytes_written = bytes_written + file.write(&data).unwrap();
         //}
-        pos += 1024*1024*1024;
+        pos += 1024 * 1024 * 1024;
     }
     mmap.flush().unwrap();
 }
 
+fn random_read_file(str: &str) {
+    let mut file = File::open(str).unwrap();
+    let num = vec![1024, 10240, 1024 * 1024, 32 * 1024 * 1024, 64 * 1024 * 1024];
+    let mut res = vec![0u8; 32];
+    let mut i: usize = 0;
+
+    for n in num {
+        let now = Instant::now();
+        println!("==============> read:{} before:{:?}", n, now);
+
+        while i < n {
+            let offset: u64 = rand::thread_rng().gen_range(1, 32 * 1024 * 1024 * 1024 - 32);
+
+            file.seek(std::io::SeekFrom::Start(i as u64)).unwrap();
+            file.read_exact(&mut res).unwrap();
+            i += 1;
+        }
+        println!("Elapsed time: {:.2?}", now.elapsed());
+    }
+}
+
+fn random_read_mmap(str: &str) {
+    let mut file = File::open(str).unwrap();
+    let mut mmap_data = unsafe { Mmap::map(&file).unwrap() };
+    let num = vec![1024, 10240, 1024 * 1024, 32 * 1024 * 1024, 64 * 1024 * 1024];
+    let mut res = vec![0u8; 32];
+    let mut i: usize = 0;
+
+    for n in num {
+        let now = Instant::now();
+        println!("==============> read:{} before:{:?}", n, now);
+
+        while i < n {
+            let offset:usize = rand::thread_rng().gen_range(1, 32 * 1024 * 1024 * 1024 - 32);
+            res = mmap_data[offset..offset + 32].to_vec();
+            i +=1;
+        }
+        println!("Elapsed time: {:.2?}", now.elapsed());
+    }
+}
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn test_random_read_file() {
+        let before = Instant::now();
+        random_read_file("/root/test/sealed");
+    }
+    #[test]
+    fn test_random_read_mmap() {
+        let before = Instant::now();
+        random_read_mmap("/root/test/sealed");
     }
 }
